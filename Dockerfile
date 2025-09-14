@@ -1,10 +1,21 @@
-#  OpenJDK 21
-FROM openjdk:21-jdk-slim
+# build Java 21
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 WORKDIR /app
+COPY . .
+RUN mvn clean package -DskipTests
+FROM eclipse-temurin:21-jre-jammy
 
-COPY target/apple-academy-api-0.0.1-SNAPSHOT.jar /app/apple-academy-api.jar
+# Cria um usuário não-root para rodar a aplicação
+RUN useradd -m appuser
+
+WORKDIR /home/appuser
+
+COPY --from=build /app/target/*.jar app.jar
+
+USER appuser
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/apple-academy-api.jar"]
+# Comando para executar a aplicação
+CMD ["java", "-jar", "app.jar"]
